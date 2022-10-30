@@ -1,0 +1,26 @@
+{
+    "manifest_version": 3,
+    "name": "GelbooruMultiPostDownloader",
+    "description": "A simple Chrome Extension to download all the images of all the open tabs of Gelbooru posts in just one click.",
+    "version": "0.0.1",
+    "background": {
+        "service_worker": "worker.js"
+    },
+    "icons": {
+        "16": "assets/favicon.ico",
+        "48": "assets/favicon.ico",
+        "128": "assets/favicon.ico"
+    },
+    "permissions": [
+        "tabs",
+        "sessions",
+        "downloads"
+    ],
+    "host_permissions": [
+        "https://gelbooru.com/**/*",
+        "https://img3.gelbooru.com/**/*"
+    ],
+    "action": {
+        "default_popup": "popup.html"
+    }
+}
