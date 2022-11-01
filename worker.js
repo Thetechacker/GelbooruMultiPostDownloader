@@ -89,9 +89,9 @@ chrome.runtime.onConnect.addListener(port => {
                         port.postMessage({ type: "action", action: "clipboardWriteText", data: { content: posttabs.map(tab => tab.url).join("\n") } })
                         port.postMessage({ type: "action", action: "setInfobox", data: { content: "Gelbooru post links copied to clipboard ;>>" } })
                     } else if(message.type === "dgpi"){
-                        posttabs = [...new Set(posttabs.map(tab => parseURIParameters(tab.url).id))]
+                        const fposttabs = [...new Set(posttabs.map(tab => parseURIParameters(tab.url).id))]
                         
-                        posttabs.forEach(id => {
+                        fposttabs.forEach(id => {
                             fetch(`${baseuri}/index.php?page=dapi&s=post&q=index&id=${id}&json=1`, { method: "GET" }).then(res => res.json()).then(res => {
                                 const image_uri = res.post[0].file_url
                                 const image_ext = image_uri.substring(image_uri.lastIndexOf('/') + 1).split(".")
