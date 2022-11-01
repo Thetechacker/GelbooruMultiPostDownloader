@@ -16,6 +16,42 @@ function parseURIParameters(uri){
     return objParams
 }
 
+function isNNN(){
+    const curYear = new Date().getFullYear()
+
+    return (new Date(`1 November ${curYear}`) < new Date()) && (new Date(`31 November ${curYear}`) > new Date())
+}
+
+chrome.runtime.onInstalled.addListener(() => {
+    chrome.storage.local.set({ nnnblock: true })
+
+    if(isNNN()){
+        chrome.storage.local.get(['nnnblock'], options => {
+            if(options.nnnblock){
+                chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id)))
+            }
+        })
+    }
+})
+
+chrome.tabs.onUpdated.addListener((tabId, tab) => {
+    if(isNNN()){
+        if(tab.status !== "loading") return
+
+        if(tab.url){
+            if(!tab.url.startsWith(baseuri)) return
+        } else {
+            return
+        }
+    
+        chrome.storage.local.get(['nnnblock'], options => {
+            if(options.nnnblock){
+                chrome.tabs.remove(tabId)
+            }
+        })
+    }
+})
+
 chrome.runtime.onConnect.addListener(port => {
     port.onMessage.addListener(message => {
         chrome.tabs.query({}).then(tabs => {
@@ -34,21 +70,17 @@ chrome.runtime.onConnect.addListener(port => {
             } else if(message.type === "nnnblock_swchange"){
                 chrome.storage.local.set({ nnnblock: !message.data })
 
-                if(!message.data){
+                if(isNNN() && !message.data){
                     chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id)))
                 }
             } else {
                 chrome.storage.local.get(null, options => {
-                    if(options.nnnblock){
-                        const curYear = new Date().getFullYear()
-    
-                        if((new Date(`1 November ${curYear}`) < new Date()) && (new Date(`31 November ${curYear}`) > new Date())){
-                            const errMessage = "Nu-uh :/"
-                            port.postMessage({ type: "error", data: { err: errMessage, errStack: errMessage } })
-                            tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id))
-            
-                            return
-                        }
+                    if(options.nnnblock && isNNN()){
+                        const errMessage = "Nu-uh :/"
+                        port.postMessage({ type: "error", data: { err: errMessage, errStack: errMessage } })
+                        tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id))
+        
+                        return
                     }
     
                     if(!posttabs.length) return port.postMessage({ type: "action", action: "setInfobox", data: { content: "No Gelbooru post tabs found." } })
@@ -81,15 +113,5 @@ chrome.runtime.onConnect.addListener(port => {
                 })
             }
         }).catch(err => port.postMessage({ type: "error", data: { err: err.toString(), errStack: err.stack.toString() } }))
-    })
-})
-
-chrome.tabs.onUpdated.addListener((tabId, tab) => {
-    if(tab.status !== "loading" || !tab.url.startsWith(baseuri)) return
-
-    chrome.storage.local.get(['nnnblock'], options => {
-        if(options.nnnblock){
-            chrome.tabs.remove(tabId)
-        }
     })
 })
