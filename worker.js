@@ -28,6 +28,14 @@ chrome.runtime.onConnect.addListener(port => {
                     return false
                 }
             })
+            
+            const curYear = new Date().getFullYear()
+
+            if((new Date(`1 November ${curYear}`) < new Date()) && (new Date(`31 November ${curYear}`) > new Date())){
+                port.postMessage({ type: "error", data: { err: "Try the next month ;)", errStack: "Try the next month ;)" } })
+
+                return
+            }
 
             if(!tabs.length) return port.postMessage({ type: "action", action: "setInfobox", data: { content: "No Gelbooru post tabs found." } })
 
