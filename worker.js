@@ -22,8 +22,10 @@ function isNNN(){
     return (new Date(`1 November ${curYear}`) < new Date()) && (new Date(`31 November ${curYear}`) > new Date())
 }
 
-chrome.runtime.onInstalled.addListener(() => {
-    chrome.storage.local.set({ nnnblock: true })
+chrome.runtime.onInstalled.addListener(details => {
+    if(details.reason === "install"){
+        chrome.storage.local.set({ nnnblock: true })
+    }
 
     if(isNNN()){
         chrome.storage.local.get(['nnnblock'], options => {
