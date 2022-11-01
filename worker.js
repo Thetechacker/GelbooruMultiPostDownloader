@@ -46,7 +46,7 @@ chrome.tabs.onUpdated.addListener((tabId, tab) => {
     
         chrome.storage.local.get(['nnnblock'], options => {
             if(options.nnnblock){
-                chrome.tabs.remove(tabId)
+                chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id)))
             }
         })
     }
