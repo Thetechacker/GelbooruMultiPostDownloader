@@ -17,9 +17,9 @@ function parseURIParameters(uri){
 }
 
 function isNNN(){
-    const curYear = new Date().getFullYear()
+    const curDate = new Date()
 
-    return (new Date(`1 November ${curYear}`) < new Date()) && (new Date(`31 November ${curYear}`) > new Date())
+    return (new Date(`1 November ${curDate.getFullYear()}`) < curDate) && (new Date(`31 November ${curDate.getFullYear()}`) > curDate)
 }
 
 chrome.runtime.onInstalled.addListener(details => {
@@ -30,7 +30,7 @@ chrome.runtime.onInstalled.addListener(details => {
     if(isNNN()){
         chrome.storage.local.get(['nnnblock'], options => {
             if(options.nnnblock){
-                chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id)))
+                chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id))).catch(err => undefined)
             }
         })
     }
@@ -48,7 +48,7 @@ chrome.tabs.onUpdated.addListener((tabId, tab) => {
     
         chrome.storage.local.get(['nnnblock'], options => {
             if(options.nnnblock){
-                chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id)))
+                chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id))).catch(err => undefined)
             }
         })
     }
@@ -56,6 +56,10 @@ chrome.tabs.onUpdated.addListener((tabId, tab) => {
 
 chrome.runtime.onConnect.addListener(port => {
     port.onMessage.addListener(message => {
+        let setInfobox = (content, textColor) => port.postMessage({ type: "action", action: "setInfobox", data: { content: (typeof content === "string" ? content : "noContent"), textColor: (typeof textColor === "string" ? textColor : "greenyellow") } })
+        let throwError = (err) => port.postMessage({ type: "action", action: "setInfobox", data: { content: (err ? err.toString() : "noErr"), textColor: "red" } })
+        let throwWarning = (warning) => port.postMessage({ type: "action", action: "setInfobox", data: { content: `/!\\ ` + (typeof warning === "string" ? warning : "noWarning"), textColor: "yellow" } })
+
         chrome.tabs.query({}).then(tabs => {
             var posttabs = tabs.filter(tab => {
                 const up = parseURIParameters(tab.url)
@@ -73,23 +77,22 @@ chrome.runtime.onConnect.addListener(port => {
                 chrome.storage.local.set({ nnnblock: !message.data })
 
                 if(isNNN() && !message.data){
-                    chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id)))
+                    chrome.tabs.query({}).then(tabs => tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id))).catch(throwError)
                 }
             } else {
                 chrome.storage.local.get(null, options => {
                     if(options.nnnblock && isNNN()){
-                        const errMessage = "Nu-uh :/"
-                        port.postMessage({ type: "error", data: { err: errMessage, errStack: errMessage } })
+                        throwError("Nuh-uh :/")
                         tabs.filter(tab => tab.url.startsWith(baseuri)).forEach(tab => chrome.tabs.remove(tab.id))
         
                         return
                     }
     
-                    if(!posttabs.length) return port.postMessage({ type: "action", action: "setInfobox", data: { content: "No Gelbooru post tabs found." } })
+                    if(!posttabs.length) return throwWarning("No Gelbooru post tabs found.")
     
                     if(message.type === "cpgl"){
                         port.postMessage({ type: "action", action: "clipboardWriteText", data: { content: posttabs.map(tab => tab.url).join("\n") } })
-                        port.postMessage({ type: "action", action: "setInfobox", data: { content: "Gelbooru post links copied to clipboard ;>>" } })
+                        setInfobox("Gelbooru post links copied to clipboard ;>>")
                     } else if(message.type === "dgpi"){
                         const fposttabs = [...new Set(posttabs.map(tab => parseURIParameters(tab.url).id))]
                         
@@ -99,14 +102,14 @@ chrome.runtime.onConnect.addListener(port => {
                                 const image_ext = image_uri.substring(image_uri.lastIndexOf('/') + 1).split(".")
         
                                 chrome.downloads.download({ url: image_uri, filename: `gelbooru_${res.post[0].id}${image_ext[1] ? `.${image_ext[1]}` : ""}` })
-                            }).catch(err => port.postMessage({ type: "error", data: { err: err.toString(), errStack: err.stack.toString() } }))
+                            }).catch(throwError)
                         })
-        
-                        port.postMessage({ type: "action", action: "setInfobox", data: { content: `Downloading ${posttabs.length} post images...` } })
+
+                        setInfobox(`Downloading ${posttabs.length} post images...`)
                     } else if(message.type === "closetabs"){
                         posttabs.forEach(tab => chrome.tabs.remove(tab.id))
-        
-                        port.postMessage({ type: "action", action: "setInfobox", data: { content: "Closed all the post tabs." } })
+                        
+                        setInfobox("Closed all the post tabs.")
                     }
 
                     if(message.type !== "closetabs" && options.autoclosetabs){
@@ -114,6 +117,6 @@ chrome.runtime.onConnect.addListener(port => {
                     }
                 })
             }
-        }).catch(err => port.postMessage({ type: "error", data: { err: err.toString(), errStack: err.stack.toString() } }))
+        }).catch(throwError)
     })
 })

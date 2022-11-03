@@ -9,13 +9,28 @@ body::-webkit-scrollbar {
 }
 
 body {
-    background-color: #5A5A5A;
+    background-color: #22395d;
     width: 350px;
     height: auto;
 }
 
-.error {
-    color: #FF0000 !important
+#mainbody {
+    border: 2px #355a94 solid;
+    border-radius: 25px;
+    background-color: #355a94;
+}
+
+#creditsdiv {
+    background-color: #22395d;
+    height: 18px;
+    border-radius: 25px;
+    width: fit-content;
+}
+
+#creditspar {
+    color: #006DF9;
+    margin-left: 5px;
+    margin-right: 5px;
 }
 
 button {

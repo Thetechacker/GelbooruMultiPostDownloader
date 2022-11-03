@@ -13,18 +13,12 @@ chrome.storage.local.get(null, options => {
 })
 
 port.onMessage.addListener(message => {
-    if(infobox.classList.contains("error")) infobox.classList.remove("error")
-
-    if(message.type === "error"){
-        infobox.classList.add("error")
-        infobox.innerText = message.data.err
-
-        window.scrollTo(0, document.body.scrollHeight);
-    } else if(message.type === "action"){
+    if(message.type === "action"){
         if(message.action === "setInfobox"){
+            infobox.style.color = message.data.textColor
             infobox.innerText = message.data.content
 
-            window.scrollTo(0, document.body.scrollHeight);
+            window.scrollTo(0, document.body.scrollHeight)
         } else if(message.action === "clipboardWriteText"){
             navigator.clipboard.writeText(message.data.content)
         }
