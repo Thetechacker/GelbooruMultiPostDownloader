@@ -101,7 +101,7 @@ chrome.runtime.onConnect.addListener(port => {
                                 const image_uri = res.post[0].file_url
                                 const image_ext = image_uri.substring(image_uri.lastIndexOf('/') + 1).split(".")
         
-                                chrome.downloads.download({ url: image_uri, filename: `gelbooru_${res.post[0].id}${image_ext[1] ? `.${image_ext[1]}` : ""}` })
+                                chrome.downloads.download({ url: image_uri, filename: `gelbooru_${res.post[0].id}${image_ext[1] ? `.${image_ext[1]}` : ""}` }).catch(throwError)
                             }).catch(throwError)
                         })
 
